@@ -32,7 +32,14 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define READ_BUT_1		HAL_GPIO_ReadPin(BUTTON_1_GPIO_Port, BUTTON_1_Pin)
+#define READ_BUT_2		HAL_GPIO_ReadPin(BUTTON_2_GPIO_Port, BUTTON_2_Pin)
+#define READ_BUT_3		HAL_GPIO_ReadPin(BUTTON_3_GPIO_Port, BUTTON_3_Pin)
 
+#define ON 1
+#define OFF 0
+
+#define REFdebounce 200 // Buton debounce parameter in milisecond
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -46,6 +53,21 @@ TIM_HandleTypeDef htim17;
 
 /* USER CODE BEGIN PV */
 uint16_t counter = 0;
+
+volatile uint16_t in0 = 3;
+volatile uint16_t in0_0 = 0;
+volatile uint16_t in0_1 = 0;
+volatile uint8_t state_of_in0;
+
+volatile uint16_t in1 = 3;
+volatile uint16_t in1_0 = 0;
+volatile uint16_t in1_1 = 0;
+volatile uint8_t state_of_in1;
+
+volatile uint16_t in2 = 3;
+volatile uint16_t in2_0 = 0;
+volatile uint16_t in2_1 = 0;
+volatile uint8_t state_of_in2;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -96,11 +118,23 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	GPIOA->BSRR = GPIO_PIN_All;
 
-	HAL_TIM_Base_Start_IT(&htim17);
+	
 	
   while (1)
   {
-		HAL_Delay(10);
+		if (in0 == ON ){
+			HAL_TIM_Base_Start_IT(&htim17);
+		}
+		else if ( in1 == ON ) {
+			HAL_TIM_Base_Stop_IT(&htim17);
+			GPIOA->BSRR = GPIO_PIN_All;
+		}
+//		else if ( counter > 255 ) {
+//			counter = 0;
+//			HAL_TIM_Base_Stop_IT(&htim17);
+//			GPIOA->BSRR = GPIO_PIN_All;
+//		}
+		HAL_Delay(5);
   }
   /* USER CODE END 3 */
 }
@@ -115,6 +149,7 @@ void  HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 			
 		}
 		else if (counter > 255){
+			HAL_TIM_Base_Stop_IT(&htim17);
 			counter = 0;
 			GPIOA->BSRR = GPIO_PIN_All;
 			GPIOA->BRR = counter;
@@ -122,7 +157,78 @@ void  HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	}
 	
 }
-// It is a github test!!!!
+
+void HAL_SYSTICK_Callback(){  // Need to have this code in the stm32f0xx_it.c  HAL_SYSTICK_IRQHandler();
+	
+	in0 = READ_BUT_1;
+	in1 = READ_BUT_2;
+	in2 = READ_BUT_3;
+	////////////TEST Button 0 /////////////
+	if(in0 == 0)
+	{
+		in0_0++;
+		in0_1 = 0 ;
+		if (in0_0 > REFdebounce)
+		{
+			in0_0 = REFdebounce + 1;
+			state_of_in0 = 0;
+		}
+	}
+	else if (in0 == 1)
+	{
+		in0_0 = 0;
+		in0_1++;
+		if (in0_1 > REFdebounce)
+		{
+			in0_1 = REFdebounce + 1;
+			state_of_in0 = 1;
+		}
+	}
+		////////////TEST Button 1 /////////////
+	if(in1 == 0)
+	{
+		in1_0++;
+		in1_1 = 0 ;
+		if (in1_0 > REFdebounce)
+		{
+			in1_0 = REFdebounce + 1;
+			state_of_in1 = 0;
+		}
+	}
+	else if (in1 == 1)
+	{
+		in1_0 = 0;
+		in1_1++;
+		if (in1_1 > REFdebounce)
+		{
+			in1_1 = REFdebounce + 1;
+			state_of_in1 = 1;
+		}
+	}
+			////////////TEST Button 2 /////////////
+	if(in2 == 0)
+	{
+		in2_0++;
+		in2_1 = 0 ;
+		if (in2_0 > REFdebounce)
+		{
+			in2_0 = REFdebounce + 1;
+			state_of_in2 = 0;
+		}
+	}
+	else if (in2 == 1)
+	{
+		in2_0 = 0;
+		in2_1++;
+		if (in2_1 > REFdebounce)
+		{
+			in2_1 = REFdebounce + 1;
+			state_of_in2 = 1;
+		}
+	}
+	
+}
+
 
 /**
   * @brief System Clock Configuration
